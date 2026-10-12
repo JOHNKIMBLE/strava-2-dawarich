@@ -30,6 +30,10 @@ STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 STRAVA_API_BASE = "https://www.strava.com/api/v3"
 
+# (connect, read) seconds; uploads get a longer read window
+HTTP_TIMEOUT = (10, 60)
+UPLOAD_TIMEOUT = (10, 300)
+
 REDIRECT_PORT = 8089
 REDIRECT_URI = f"http://localhost:{REDIRECT_PORT}/callback"
 
@@ -191,7 +195,7 @@ def authorize(cfg):
         "client_secret": cfg["client_secret"],
         "code": code,
         "grant_type": "authorization_code",
-    })
+    }, timeout=HTTP_TIMEOUT)
     resp.raise_for_status()
     token_data = resp.json()
 
@@ -227,7 +231,7 @@ def refresh_token(cfg, token):
         "client_secret": cfg["client_secret"],
         "refresh_token": token["refresh_token"],
         "grant_type": "refresh_token",
-    })
+    }, timeout=HTTP_TIMEOUT)
     resp.raise_for_status()
     token_data = resp.json()
     save_token(token_data)
@@ -248,7 +252,7 @@ def strava_request(method, url, access_token, retries=3, **kwargs):
     """Make an authenticated Strava API request with retry on 429/5xx."""
     headers = {"Authorization": f"Bearer {access_token}"}
     for attempt in range(retries):
-        resp = requests.request(method, url, headers=headers, **kwargs)
+        resp = requests.request(method, url, headers=headers, timeout=HTTP_TIMEOUT, **kwargs)
 
         if resp.status_code == 429:
             # Rate limited — check Strava's rate limit reset header or back off
@@ -490,6 +494,7 @@ def geocode_location(query):
         "https://nominatim.openstreetmap.org/search",
         params={"q": query, "format": "json", "limit": 1},
         headers={"User-Agent": "Strava-2-Dawarich/1.0"},
+        timeout=HTTP_TIMEOUT,
     )
     if resp.ok and resp.json():
         result = resp.json()[0]
@@ -518,7 +523,7 @@ def get_home_location(cfg):
         places_url = f"{cfg['dawarich_url']}/api/v1/places"
         headers = {"Authorization": f"Bearer {cfg['dawarich_api_key']}"}
         try:
-            resp = requests.get(places_url, headers=headers)
+            resp = requests.get(places_url, headers=headers, timeout=HTTP_TIMEOUT)
             if resp.ok:
                 for place in resp.json():
                     if place.get("name", "").lower() == "home":
@@ -571,6 +576,7 @@ def push_to_dawarich(cfg, gpx_files):
                 import_url,
                 headers=headers,
                 files={"file": (gpx_path.name, f, "application/gpx+xml")},
+                timeout=UPLOAD_TIMEOUT,
             )
         if resp.ok:
             print(f"    ✓ Uploaded")
