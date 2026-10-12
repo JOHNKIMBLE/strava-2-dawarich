@@ -13,7 +13,7 @@ On first run, a baseline date is set to **now** — only future activities are s
 
 ## Prerequisites
 
-- Python 3.8+
+- Python 3.10+
 - A [Strava API Application](https://www.strava.com/settings/api) with:
   - **Authorization Callback Domain**: `localhost`
 - (Optional) A running Dawarich instance with an API key
@@ -22,8 +22,8 @@ On first run, a baseline date is set to **now** — only future activities are s
 
 ```bash
 # Clone and install
-git clone https://github.com/JOHNKIMBLE/strava-2-darawich.git
-cd strava-2-darawich
+git clone https://github.com/JOHNKIMBLE/strava-2-dawarich.git
+cd strava-2-dawarich
 pip install -r requirements.txt
 ```
 
